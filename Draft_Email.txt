@@ -1,0 +1,93 @@
+To: Annette Semadeni-Davies <Annette.Davies@niwa.co.nz>; Fleur Matheson <Fleur.Matheson@niwa.co.nz>
+Subject: RE: TKIL2602 - Lake Omapere modelling - Corrections Complete + Issue Identified
+
+Hi Annette and Fleur,
+
+I have completed the corrections to the CW coverage analysis as outlined by Annette. However, I have identified an important issue that requires your guidance before proceeding.
+
+---
+
+CORRECTIONS COMPLETED:
+======================
+
+All requested corrections have been applied:
+
+1. Added nzsegment column (required for CLUES/mitigation model indexing)
+2. Ordered data by HydSeq in ascending order (headwaters to coast)
+3. Updated land area calculations to exclude lake area (using your LakeAreaUpdate.xlsx data)
+4. Recalculated all CW coverage percentages based on corrected land areas
+
+Files created:
+- O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results\CW_Coverage_CORRECTED.csv
+- O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results\CW_Coverage_CORRECTED.xlsx
+- O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results\LakeAreaUpdate.xlsx (copy of Annette's file)
+
+---
+
+ISSUE IDENTIFIED:
+=================
+
+When reviewing the corrected data, I found that 5 subcatchments have CW coverage percentages > 100%, with some extremely high values:
+
+  SubcatchmentID | nzsegment | Land Area ha | CW Area ha | Coverage  | CW in Lake ha
+  ---------------|-----------|--------------|------------|-----------|---------------
+  0              | 1009647   | 0.04         | 3.59       | 8,465%    | ~3.55
+  3              | 1009699   | 0.59         | 4.68       | 790%      | ~4.09
+  34             | 1010388   | 1.00         | 4.84       | 484%      | ~3.84
+  15             | 1010139   | 9.43         | 16.96      | 180%      | ~7.53
+  47             | 1010665   | 0.84         | 1.03       | 123%      | ~0.19
+
+ROOT CAUSE:
+-----------
+The original CW area calculations used the full subcatchment boundaries (including lake area).
+Now that we're using land area only (excluding the +0.66m lake zone), it's clear that
+approximately 19 ha of the identified "potential CW sites" are located in areas that would
+be inundated with the raised lake level.
+
+For example, Subcatchment 0:
+- Original subcatchment area: 41.72 ha
+- Land area (after +0.66m lake exclusion): 0.04 ha (almost entirely lake!)
+- CW area identified: 3.59 ha
+- This means ~3.55 ha of potential CW sites are in the lake zone
+
+---
+
+QUESTION FOR YOU:
+=================
+
+How should we handle this? I see a few options:
+
+Option 1: Re-clip CW shapefiles
+   - Clip both CW shapefiles (Type 1 GW and Type 2 SW) to exclude the +0.66m lake inundation area
+   - Recalculate CW areas based on clipped polygons
+   - This would give us the "true" potential CW area on land only
+
+Option 2: Cap percentages at 100%
+   - For subcatchments where CW > land area, set CW area = land area
+   - Flag these subcatchments for special handling in MSCMM
+
+Option 3: Use as-is with flags
+   - Keep current CW areas but flag problematic subcatchments
+   - Document that some CW areas overlap with lake zone
+   - Handle in MSCMM modeling phase
+
+My recommendation: Option 1 (re-clip the CW shapefiles) would give us the most accurate
+representation of where CWs can actually be constructed. However, I wanted to check with
+you first before making this change.
+
+---
+
+VERIFICATION:
+=============
+
+I have verified that the nzsegment matching is correct:
+- SubcatchmentID = FID (row index in Subs.shp) = FID_Subs (your data)
+- All 50 subcatchments have exactly 1 nzsegment each
+- All nzsegment values match between Subs.shp and your LakeAreaUpdate.xlsx
+- Documentation saved to: O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results
+---
+
+Please let me know how you'd like me to proceed with the CW/lake overlap issue.
+
+Nga mihi,
+Reza

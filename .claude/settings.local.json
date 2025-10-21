@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Read(//o/TKIL2602/Working/Lake Omapere Trust/From WWLA/**)",
+      "Bash(copy \"O:\\TKIL2602\\Working\\Lake Omapere Trust\\CLUES_SS_NRC_2020\\LakeAreaUpdate.xlsx\" \"C:\\Users\\moghaddamr\\Reza_CW_Analysis\\LakeAreaUpdate.xlsx\")",
+      "Bash(cmd /c copy \"O:\\TKIL2602\\Working\\Lake Omapere Trust\\CLUES_SS_NRC_2020\\LakeAreaUpdate.xlsx\" \"C:\\Users\\moghaddamr\\Reza_CW_Analysis\\LakeAreaUpdate.xlsx\")",
+      "Bash(findstr /i \"subcatch\")",
+      "Read(//o/TKIL2602/Working/Lake Omapere Trust/CW_Analysis_Results/**)",
+      "Bash(cmd /c \"dir C:\\Users\\moghaddamr\\Reza_CW_Analysis\\*.py /B /O-D\")",
+      "Bash(gh --version)",
+      "Bash(cmd /c \"dir C:\\Users\\moghaddamr\\Reza_CW_Analysis /B\")",
+      "Bash(git init)",
+      "Bash(git add .)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

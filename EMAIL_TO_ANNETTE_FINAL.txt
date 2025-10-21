@@ -1,0 +1,44 @@
+Hi Annette,
+
+Thanks for the clarification - I've now recalculated everything directly from the GIS shapefiles to understand the issue better.
+
+WHAT I INITIALLY USED:
+When I applied your corrections, I used Column 73 "AREALand (HA)" from your LakeAreaUpdate.xlsx (sheet "AreasRedonefromGIS") as the land area for each subcatchment. I then calculated CW percentages as:
+  - Type1_GW_Percent = (Type1_GW_Area_ha / Land_Area_ha) × 100
+  - Type2_SW_Percent = (Type2_SW_Area_ha / Land_Area_ha) × 100
+  - Combined_Percent = (Combined_CW_Area_ha / Land_Area_ha) × 100
+
+That's when the >100% coverage issue appeared for 5 subcatchments.
+
+WHAT I FOUND WHEN RECALCULATING FROM GIS:
+I recalculated land areas directly from the shapefiles using:
+  - Subs.shp (subcatchment boundaries)
+  - Lake Omapere-236.34 mAMSL (+0.66m).shp (lake inundation area)
+
+Formula: Land Area (ha) = Total Subcatchment Area - Lake (+0.66m inundation zone)
+
+Then recalculated CW percentages using these GIS-derived land areas.
+
+For the problem subcatchments:
+- SC-0: GIS shows 36.09 ha land (Total 41.72 - Lake 5.63), but Column 73 in your Excel shows 0.04 ha
+- SC-3: GIS shows 23.44 ha land (Total 25.45 - Lake 2.00), but Column 73 shows 0.59 ha
+- SC-15: GIS shows 99.32 ha land (Total 166.26 - Lake 66.94), but Column 73 shows 9.43 ha
+
+Using the GIS-calculated land areas, there are NO subcatchments with >100% coverage (max is 68%).
+
+THE QUESTION:
+Column 73 in your AreasRedonefromGIS sheet is labeled "AREALand (HA)" - what does this exclude beyond the lake? Based on your PDF, it seems to exclude both lake AND marshland (freshwater herbaceous land from LCDB5).
+
+For CW modeling, should we use:
+A) GIS land area (Total - Lake only) = 36 ha for SC-0
+B) Your Column 73 area (Total - Lake - Marshland) = 0.04 ha for SC-0
+
+If it's (B), then we're back to >100% coverage because CW areas exceed the available non-marsh land.
+
+I've saved the GIS-calculated results to:
+O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results\CW_Coverage_GIS_CALCULATED.xlsx
+
+Happy to jump on a call to go through this in GIS if that helps.
+
+Cheers,
+Reza
