@@ -65,6 +65,13 @@ Results_temp/
 # Archives
 Archive/
 
+# Large data directories
+Model/
+Results/
+Shapefiles/
+CW_Analysis_Results/
+CLUES_Data/
+
 # Temporary status/summary files
 ACTUAL_STATUS.md
 CLEANUP_SUMMARY.md
