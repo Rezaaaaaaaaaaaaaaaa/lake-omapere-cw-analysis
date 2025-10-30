@@ -1,30 +1,86 @@
-# Temporary files
-nul
-*.tmp
-*.temp
-
-# Python cache
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Large shapefiles (not included in this directory but just in case)
-*.shp
-*.shx
-*.dbf
-*.prj
-*.cpg
-*.qix
-*.qmd
+# Root-level Python scripts (temporary analysis)
+/*.py
 
-# IDE files
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Data files (large)
+*.xlsb
+*.xlsx
+*.xls
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.~*
+
+# Output directories
+Outputs_temp/
+Results_temp/
+
+# Archives
+Archive/
+
+# Temporary status/summary files
+ACTUAL_STATUS.md
+CLEANUP_SUMMARY.md
+COMPLETION_REPORT.md
+EXECUTION_STATUS.md
+FINAL_SUMMARY.txt
+PROGRESS_SUMMARY.txt
+PROJECT_COMPLETE.md
+PROJECT_STATUS.md
+QUICK_REFERENCE.txt
+QUICK_START.txt
+
+# Keep important files
+!README.md
+!LAKE_OMAPERE_MODEL_READY.md
+!ROUTING_ANALYSIS_COMPLETE.md
+!SCHEMATICS_README.md
+!.gitignore
+!.gitkeep
