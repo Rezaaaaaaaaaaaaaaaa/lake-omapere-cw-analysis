@@ -1,0 +1,251 @@
+Lake Omapere CW Analysis - Quick Instructions
+==============================================
+
+WHAT YOU NEED TO KNOW
+----------------------
+
+• The script is READY TO RUN. All the input files are in place and the LRF bug is fixed.
+
+• Location: C:\Users\moghaddamr\Reza_CW_Analysis\Analysis_Scripts\lake_omapere_cw_analysis.py
+  Also on O:\TKIL2602\Working\Lake Omapere Trust\Lake_Omapere_CW_Analysis\
+
+• It analyzes 50 Lake Omapere reaches for TP load reductions from constructed wetlands.
+
+
+THE BIG FIX (IMPORTANT!)
+------------------------
+
+We found and fixed a CRITICAL ERROR in the LRF implementation:
+
+• The script was treating LRF as a reduction percentage. WRONG!
+• LRF actually means the REMAINING load percentage (what's left after CW treatment).
+• This made CWs look 3x less effective than they actually are.
+
+CORRECTED LRF VALUES (from Model/Lookups/LRFs_years.xlsx):
+  <2% coverage:  LRF = 0.23  (23% remaining = 77% reduction)
+  2-4% coverage: LRF = 0.42  (42% remaining = 58% reduction)
+  >4% coverage:  LRF = 0.48  (48% remaining = 52% reduction)
+
+OLD RESULTS ARE INVALID. Delete them. Run fresh.
+
+
+INPUT FILES & LOCATIONS
+-----------------------
+
+CLUES Data (Big CSV files, ~100 MB each):
+  Model/InputData/CLUESloads_baseline.csv
+  Model/InputData/CLUESloads_wetland_066m.csv
+
+CW Coverage (THE IMPORTANT ONE - 50 reaches):
+  CW_Coverage_GIS_CALCULATED.xlsx
+  This has the GIS-calculated percentages. Don't use anything else.
+
+Network & Attenuation:
+  Model/InputData/Hydroedge2_5.csv
+  Model/InputData/AttenCarry.csv
+
+LRF Values:
+  Model/Lookups/LRFs_years.xlsx
+  Source of the 23%, 42%, 48% values we use.
+
+Shapefiles (for maps):
+  Shapefiles/Reference/Riverlines.shp
+  Shapefiles/Reference/Catchment.shp
+  Shapefiles/Lake/Lake Omapere-236.34 mAMSL (+0.66m).shp
+  Shapefiles/Subcatchments/Subs.shp
+
+
+HOW TO RUN
+----------
+
+1. Open command prompt or terminal
+
+2. Navigate to the script folder:
+   cd C:\Users\moghaddamr\Reza_CW_Analysis\Analysis_Scripts
+
+3. Run it:
+   python lake_omapere_cw_analysis.py
+
+4. Wait about 5 minutes. It will:
+   - Load data (~2 min)
+   - Calculate loads (~30 sec)
+   - Route through network (~30 sec)
+   - Generate maps (~1-2 min)
+
+5. Check outputs in:
+   Results/LAKE_OMAPERE_RESULTS/
+
+
+WHAT YOU GET
+------------
+
+CSV Files (Data folder):
+  Lake_Omapere_Routing_Results.csv     - All 50 reaches, full details
+  Lake_Omapere_Complete_Results.csv    - Summary version
+
+Maps (Maps folder, 300 DPI PNG):
+  Generated_Loads_Comparison.png       - 3-panel: baseline vs wetland vs wetland+CW
+  Routed_Loads_Comparison.png          - Network routing effects
+  CW_Reduction_Generated.png           - Where CWs work best (generated)
+  CW_Reduction_Routed.png              - Where CWs work best (routed)
+  CW_Coverage_Distribution.png         - Spatial CW coverage
+
+Figures (Figures folder):
+  Charts and plots
+
+Summary (Summary folder):
+  Text files with key stats
+
+
+VALIDATION CHECKLIST
+--------------------
+
+After running, check these things:
+
+1. Total baseline TP load is around 300 kg/year (0.3 tonnes/year)
+   - NOT 300,000 or 0.0003
+
+2. Low coverage reaches show ~77% reduction
+   - NOT 26% (that was the bug)
+
+3. Routed reductions are 3-10x bigger than generated
+   - This is the network effect (upstream CWs help downstream)
+
+4. No negative loads anywhere
+   - Check the CSV, all values should be >= 0
+
+5. All CW percentages are 0-100%
+   - Anything >100% means land area mismatch error
+
+6. Maps look sensible
+   - Higher loads upstream, lower downstream
+   - CW locations match coverage data
+
+
+KNOWN ISSUES
+------------
+
+Minor stuff:
+• 1 reach has tiny negative load (-0.000000). Basically zero due to rounding. Ignore it.
+• The routing is simplified compared to full DNZ model. Should validate against model if possible.
+
+If you see CW percentages >100%:
+• This means land area mismatch between files
+• Use CW_Coverage_GIS_CALCULATED.xlsx - those percentages are correct
+• The script now uses this file, so should be fine
+
+
+WHAT THE SCRIPT DOES (SIMPLE VERSION)
+--------------------------------------
+
+Step 1: Loads data
+  - CLUES TP loads (baseline and wetland scenarios)
+  - CW coverage from GIS
+  - River network connections
+  - Attenuation factors
+
+Step 2: Calculates generated loads
+  - How much TP each catchment produces
+  - 3 scenarios: baseline, wetland (no CW), wetland+CW
+
+Step 3: Applies CW mitigation
+  - Categorizes each reach by coverage (<2%, 2-4%, >4%)
+  - Applies LRF: Mitigated = Original × LRF
+  - Low coverage is most effective (77% removal)
+
+Step 4: Routes through network
+  - Tracks loads flowing downstream
+  - Accumulates from all upstream reaches
+  - Applies attenuation (some P sticks to sediment)
+  - Shows network amplification effect
+
+Step 5: Generates outputs
+  - CSV files with all numbers
+  - Maps showing spatial patterns
+  - Summary stats
+
+
+KEY NUMBERS
+-----------
+
+50 reaches (all Lake Omapere catchment)
+~0.3 tonnes/year total baseline TP load
+0-68% CW coverage range
+
+LRF values:
+  Low:    0.23 (77% reduction) - most effective!
+  Medium: 0.42 (58% reduction)
+  High:   0.48 (52% reduction)
+
+
+WHERE TO GET HELP
+-----------------
+
+For detailed explanations, see:
+  Lake_Omapere_Script_Guide.docx       - Full script guide (Word doc)
+  LRF_VALUES_CORRECTED.md              - Why we changed LRF values
+  DATA_QUALITY_ANALYSIS_REPORT.md      - Input data quality assessment
+
+Location: O:\TKIL2602\Working\Lake Omapere Trust\Lake_Omapere_CW_Analysis\
+
+
+NEXT STEPS AFTER RUNNING
+-------------------------
+
+1. Check validation items above
+2. Review the maps (easiest way to spot issues)
+3. Look at top/bottom reaches in CSV for reasonableness
+4. Calculate total TP reduction to lake
+5. Identify most effective CW locations
+6. Share with Fleur/Annette for approval
+
+
+ALIGNMENT WITH ANNETTE'S MODEL
+-------------------------------
+
+The script now matches Annette's DNZ model:
+• Uses LRFs_years.xlsx values (23, 42, 48 for DOPmed)
+• Formula: mitLoad = load * mitFact  (direct multiplication)
+• Coverage categories: <2%, 2-4%, >4%
+• 50 Lake Omapere reaches
+• CLUES baseline and +0.66m scenarios
+
+See Documentation/annette.txt for Annette's original instructions.
+
+
+TROUBLESHOOTING
+---------------
+
+Script won't run:
+  - Check you're in the right directory
+  - Check Python is installed (python --version)
+  - Check required packages: pandas, numpy, matplotlib, geopandas, openpyxl
+
+Missing input files:
+  - Check paths in Config class (lines 80-85)
+  - Files should be relative to script location
+
+Wrong results:
+  - Check LRF values are 0.23, 0.42, 0.48 (NOT 0.26)
+  - Check CW coverage file is CW_Coverage_GIS_CALCULATED.xlsx
+  - Verify all 50 reaches are in the data
+
+Maps won't generate:
+  - Check shapefiles are in Shapefiles/ folder
+  - geopandas must be installed
+  - Check for error messages about missing files
+
+
+IMPORTANT REMINDERS
+-------------------
+
+• OLD RESULTS ARE INVALID (before LRF fix on Oct 31, 2025)
+• Use CW_Coverage_GIS_CALCULATED.xlsx for coverage data
+• LRF = remaining load factor (NOT reduction factor)
+• Validate results before sharing with stakeholders
+• Total catchment load should be ~300 kg/year TP
+
+
+Last Updated: November 2, 2025
+Script Version: Corrected LRF + CSV support
+Status: Ready to run

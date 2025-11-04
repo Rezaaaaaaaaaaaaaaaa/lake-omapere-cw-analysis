@@ -1,0 +1,204 @@
+Lake Omapere CW Analysis - Input Files Location Guide
+=====================================================
+
+IMPORTANT: This guide tells you where all input files are located.
+Some large files (~350 MB total) remain on C: drive to save space.
+
+
+FILES ON O: DRIVE (Small, Essential Files)
+-------------------------------------------
+
+Location: O:\TKIL2602\Working\Lake Omapere Trust\Lake_Omapere_CW_Analysis\Input_Data\
+
+✓ CW_Coverage_GIS_CALCULATED.xlsx (8.5 KB)
+  - THE MOST IMPORTANT FILE
+  - 50 Lake Omapere reaches with CW coverage percentages
+  - GIS-calculated, validated, correct
+
+✓ CW_Coverage_by_Subcatchment.xlsx (7.5 KB)
+  - Alternative coverage data
+  - Script uses GIS_CALCULATED version
+
+✓ Lookups\LRFs_years.xlsx (204 KB)
+  - Load Reduction Factor values
+  - Contains 23%, 42%, 48% (DOPmed values)
+  - Source of corrected LRF values
+
+✓ Shapefiles\ (all shapefiles for mapping)
+  - Reference\Riverlines.shp
+  - Reference\Catchment.shp
+  - Lake\Lake Omapere-236.34 mAMSL (+0.66m).shp
+  - Subcatchments\Subs.shp
+  - CW_Sites\ (if available)
+
+
+FILES ON C: DRIVE (Large CSV Files)
+------------------------------------
+
+Location: C:\Users\moghaddamr\Reza_CW_Analysis\Model\InputData\
+
+These files are TOO LARGE to copy to O: drive (~350 MB total).
+The script MUST be run from C: drive to access these files.
+
+✓ CLUESloads_baseline.csv (102 MB)
+  - CLUES model output for baseline scenario
+  - 593,517 reaches total (50 are Lake Omapere)
+  - Contains TPAgGen, soilP, TPGen columns
+
+✓ CLUESloads_wetland_066m.csv (102 MB)
+  - CLUES model output for +0.66m lake level scenario
+  - Same structure as baseline
+  - Used for wetland comparison
+
+✓ Hydroedge2_5.csv (114 MB)
+  - River network connectivity
+  - Upstream/downstream relationships
+  - HYDSEQ ordering for routing
+
+✓ AttenCarry.csv (30 MB)
+  - Attenuation factors (PstreamCarry, PresCarry)
+  - How much P sticks to sediment
+  - Used in network routing calculations
+
+
+WHY LARGE FILES STAY ON C: DRIVE
+---------------------------------
+
+1. Size: 350 MB is too large for routine O: drive backups
+2. Speed: Faster to access from local C: drive
+3. Shared: Model/InputData folder has other project files
+4. Unnecessary: Only need Lake Omapere subset (50 reaches from 593K)
+5. Stable: These files don't change often
+
+
+HOW TO RUN THE SCRIPT
+----------------------
+
+OPTION 1: Run from C: drive (RECOMMENDED)
+  cd C:\Users\moghaddamr\Reza_CW_Analysis\Analysis_Scripts
+  python lake_omapere_cw_analysis.py
+
+  • Script automatically finds large files in Model/InputData/
+  • All paths are relative and work correctly
+  • Results save to C: drive Results/ folder
+
+OPTION 2: Copy large files to O: drive (NOT RECOMMENDED)
+  • Would need 350+ MB space
+  • Would need to update file paths in script
+  • No real benefit over Option 1
+
+
+SCRIPT FILE PATHS (Current Configuration)
+------------------------------------------
+
+The script (lake_omapere_cw_analysis.py) has these paths in Config class:
+
+CLUES_BASELINE_PATH = "Model/InputData/CLUESloads_baseline.csv"
+CLUES_WETLAND_PATH = "Model/InputData/CLUESloads_wetland_066m.csv"
+CW_COVERAGE_XLSX = "CW_Coverage_GIS_CALCULATED.xlsx"
+REACH_NETWORK_CSV = "Model/InputData/Hydroedge2_5.csv"
+ATTENUATION_CSV = "Model/InputData/AttenCarry.csv"
+LRF_XLSX = "Model/Lookups/LRFs_years.xlsx"
+
+These paths are RELATIVE to the script location on C: drive.
+They will NOT work if you try to run from O: drive.
+
+
+WHAT'S ON O: DRIVE
+------------------
+
+O:\TKIL2602\Working\Lake Omapere Trust\Lake_Omapere_CW_Analysis\
+
+├── HOW_TO_USE.txt (instructions)
+├── README.md (project overview)
+├── SCRIPT_READY_SUMMARY.md (validation report)
+├── Lake_Omapere_Script_Guide.docx (detailed guide)
+│
+├── Analysis_Scripts\ (19 Python files)
+│   ├── lake_omapere_cw_analysis.py (MAIN SCRIPT)
+│   ├── test_mapping.py
+│   └── ... (supporting scripts)
+│
+├── Input_Data\ (small files only)
+│   ├── CW_Coverage_GIS_CALCULATED.xlsx ✓
+│   ├── Lookups\LRFs_years.xlsx ✓
+│   └── Shapefiles\ (complete) ✓
+│
+├── Results\ (if analysis has been run)
+│   └── LAKE_OMAPERE_RESULTS\
+│       ├── Data\ (CSV files)
+│       ├── Maps\ (PNG maps)
+│       ├── Figures\ (Charts)
+│       └── Summary\ (Text summaries)
+│
+└── Documentation\
+    ├── HOW_TO_USE.txt
+    ├── DATA_QUALITY_ANALYSIS_REPORT.md
+    ├── LRF_VALUES_CORRECTED.md
+    ├── Lake_Omapere_Script_Guide.docx
+    └── Lake_Omapere_Project_Schematics.pdf
+
+
+BACKUP STRATEGY
+---------------
+
+What to backup to O: drive:
+  ✓ Scripts (Analysis_Scripts\ folder)
+  ✓ Small input files (CW coverage, LRFs, shapefiles)
+  ✓ Results (after each run)
+  ✓ Documentation
+
+What stays on C: drive only:
+  • Large CLUES CSV files (Model/InputData/)
+  • Full network data (Hydroedge2_5.csv)
+  • These are in the Model/ folder which has its own backup
+
+
+IF YOU NEED TO RECREATE FROM O: DRIVE
+--------------------------------------
+
+If you only have O: drive and need to run the analysis:
+
+1. Copy Analysis_Scripts\ from O: to C: drive
+2. Copy Input_Data\ from O: to C: drive
+3. Get the large Model/InputData/ files from source:
+   - Original location: C:\Users\moghaddamr\Reza_CW_Analysis\Model\InputData\
+   - Or request from CLUES model team
+4. Place large files in: C:\Users\moghaddamr\Reza_CW_Analysis\Model\InputData\
+5. Run script from C: drive location
+
+
+FILE CHECKSUMS (for verification)
+----------------------------------
+
+Key files on O: drive:
+
+CW_Coverage_GIS_CALCULATED.xlsx:  8,684 bytes, 50 reaches
+LRFs_years.xlsx:                  204 KB
+lake_omapere_cw_analysis.py:      ~150 KB, 1500+ lines
+
+If these files are different sizes, something went wrong in the copy.
+
+
+SUMMARY
+-------
+
+• Small essential files (CW coverage, LRFs, shapefiles): ON O: DRIVE ✓
+• Large CLUES/network files (350 MB): ON C: DRIVE (too big for O:)
+• Scripts: ON BOTH DRIVES (O: for backup, C: for running)
+• Results: COPY TO O: DRIVE after each run
+• Documentation: ON O: DRIVE ✓
+
+To run analysis: MUST use C: drive (where large files are)
+To backup: Copy scripts + small files + results to O: drive
+
+
+QUESTIONS?
+----------
+
+See HOW_TO_USE.txt for running instructions
+See Lake_Omapere_Script_Guide.docx for detailed explanations
+See LRF_VALUES_CORRECTED.md for why values were changed
+
+
+Last Updated: November 2, 2025

@@ -1,0 +1,22 @@
+To: Annette Semadeni-Davies <Annette.Davies@niwa.co.nz>; Fleur Matheson <Fleur.Matheson@niwa.co.nz>
+Subject: RE: TKIL2602 - Lake Ōmāpere modelling
+
+Hi Annette and Fleur,
+
+I've finished making the corrections Annette outlined - added the nzsegment column, ordered by HydSeq, and updated the land areas using your LakeAreaUpdate.xlsx file. The corrected files are in:
+O:\TKIL2602\Working\Lake Omapere Trust\CW_Analysis_Results\
+
+However, I've found an issue we need to sort out. When I recalculated the percentages using the land area (excluding lake), 5 subcatchments now show CW coverage well over 100%. For example:
+
+- Subcatchment 0: 0.04 ha land, but 3.59 ha of CW area (8,465%)
+- Subcatchment 3: 0.59 ha land, but 4.68 ha of CW area (790%)
+- Subcatchment 15: 9.43 ha land, but 16.96 ha of CW area (180%)
+
+It looks like about 19 ha of the potential CW sites I identified are actually in areas that would be underwater with the +0.66m lake level. This makes sense because I originally calculated CW areas using the full subcatchment boundaries before we excluded the lake.
+
+I think the best fix would be to re-clip the CW shapefiles to exclude the lake inundation area and recalculate. But wanted to check with you first - does that sound right, or would you prefer a different approach?
+
+Let me know what you think.
+
+Cheers,
+Reza

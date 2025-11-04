@@ -1,0 +1,58 @@
+Model set-up tasks.
+•	I have run a spreadsheet version of CLUES using the model calibration I did a few years ago for NRC.  I updated the land use to the latest one in CLUES based in LCDB5 and Agribase – the nominal year is 2018.  I also only model the 50 reaches in the catchment.  There are 3 runs, baseline, 0.35m and 0.66m you will only need the baseline and 0.66:
+\\niwa.local\projects\hamilton\TKIL2602\Working\Lake Omapere Trust\CLUES_SS_NRC_2020\TP_noMit_LakeOnly_baseline.xlsb
+
+\\niwa.local\projects\hamilton\TKIL2602\Working\Lake Omapere Trust\CLUES_SS_NRC_2020\TP_noMit_LakeOnly+0.66m.xlsb
+
+•	I have not updated the full model since I am waiting for the optimization when I will have to do a major overhall.  So in the meantime, please use the DNZ version from the Pokaiwhenua job.  Copy everything over.
+
+\\niwa.local\projects\hamilton\DNZ23201\Working\Model
+
+•	You will need to do two runs, one for the baseline to get the fractions and one for the wetland.  Both of these will need updates to the geodatabase.  The relevant files with the updated information are:
+\\niwa.local\projects\hamilton\TKIL2602\Working\Lake Omapere Trust\CLUES_SS_NRC_2020\TP_noMit_LakeOnly_baseline.xlsb
+
+and
+
+\\niwa.local\projects\hamilton\TKIL2602\Working\Lake Omapere Trust\CLUES_SS_NRC_2020\TP_noMit_LakeOnly+0.66m.xlsb
+
+•	Make a new selection csv by opening the REC_2.csv and saving it with a new name.  Put a 1 in the Value column for the 50 Lake Omapere reaches, all the other reaches should have a 0.  Save under new name.
+You will find the reaches in the model spreadsheets 
+
+•	You will need to update the CLUES generated loads in the CLUESloads.csv for both runs.  You will see several versions – you are going to update them anyway so just chose one.  There are 3 columns that will need to be replaced H-J.
+TPAgGen is the generated load from agriculture – this is equivalent to column AF in the model spreadsheets (OVERSEER Load (t//y))
+soilP is the load from sediment, this is column T (P_Sed).
+TPps are point sources, you don’t need to worry about this because there are no point sources in the catchment.
+TPGen is the generated load from non-pastoral sources, you are going to have to calculate this by substracting the pastoral and soil P from the total generated load in column BC (LoadIncrement).  A quick way of doing this is to change the equation from:
+=R2*Parameters!$B$4+T2+AF2+SUMPRODUCT(AL2:AS2,Parameters!$C$4:$J$4,EXP(AY2*Parameters!$C$5:$J$5+AZ2*Parameters!$C$6:$J$6+BA2*Parameters!$C$7:$J$7))
+To
+=SUMPRODUCT(AL2:AS2,Parameters!$C$4:$J$4,EXP(AY2*Parameters!$C$5:$J$5+AZ2*Parameters!$C$6:$J$6+BA2*Parameters!$C$7:$J$7))
+BUT make sure you do NOT SAVE this change.
+And make sure you save each updated load CSV with a new name.
+
+•	Attenuation (AttenCarry.csv in the InputData folder) also needs to be updated for each run.  The attenuation is different for each because the length of streams changes as the lake rises and attenuation is a function of stream length.  You need to update PstreamCarry and PresCarry using the corresponding values in the spreadsheets (BD and BF).
+Make sure you save the updated versions under a new name for each run.
+
+•	Finally, I don’t think you will need to update land use, this is only used in the model for the placement rules (which you will need to override), the costs (which we are not looking at) and to work out the ratio of pasture to other land uses  and since pasture is the overriding land use, the ratio will not change.  
+Model adjustments.
+The most recent model to use is StandAloneDNZ2.py .  You will have to make a few changes to the model itself.  Some are going to be easy, like replacing the selectionCSV (line 42), attenFile (line 81) and  loadFile (line 83) for your updates.  Others are going to be more tricky and will require some coding – it is up to you to figure out how..
+
+•	The model at the moment only works for sediment.  You will need to go through the code to make sure you are calculating TP (e.g., line 1532 should have P listed)
+
+•	Overriding the placement Rules for CW in the PlacementRules.py.  At the moment the rules are based on there being pasture (which is all subcatchments in the catchment) and clayey soils.  The code assigns a 1 in the mitigation dictionary if these criteria are met.  You will need to replace the rule saying that if there is wetland from the GIS in a subcatchment, then give a value of 1 in the CW entry of the mitigation dictionary.  Should be easy enough to read in a CSV listing the affected subcatchments.
+
+•	Changing the LRFs for different coverages if required.  You will need to work with Fleur on this – she maybe OK with the exiting ones.  At the moment, there are 3 extents in model set up (see LRFs_years.xlsx under Lookups), <2% cover, 2-4% cover and >4% cover.  In which case, easy! 
+
+•	Make the scenario look-ups using the Lookups/Scenario.xlsx file as a template – you will only be doing a single mitigation with CW.  Look at the scenario lookups for Pokaiwhenua to get an idea how I used the template.
+
+•	The extent in the model is applied to all eligible reaches from the placement rules.  The way I got round this with a similar thing for Pokaiwhenua and variable buffer width was by running each extent separately and then combining them again in Excel: see 
+\\niwa.local\projects\hamilton\DNZ23201\Working\Model\Outputs\Pokaiwhenua10-12Aug1
+
+To do this, I sent the generated loads for sediment to a csv file (line 1581) for each width of buffer– these are in the relevant folders for each width (GenSS-ScenarioX.csv).  I then combined them in Scens10_12.xlsx.  
+
+The routing was done using the python script in the folder.
+\\niwa.local\projects\hamilton\DNZ23201\Working\Model\Outputs\Pokaiwhenua10-12Aug1\ScenRouting.py
+
+If you use this method, you will have to alter the script main script to print out the results for P by changing the for loop on line 1571
+You will also have to update the routing code to read the TP results.
+
+•	

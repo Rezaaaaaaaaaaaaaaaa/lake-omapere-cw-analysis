@@ -1,0 +1,130 @@
+================================================================================
+LAKE OMAPERE CW MITIGATION PROJECT - FILE MANIFEST
+================================================================================
+Generated: 2025-10-29 17:14:00
+================================================================================
+
+
+Documentation/
+--------------------------------------------------------------------------------
+  annette.txt                                        (5.9 KB)
+  CORRECTIONS_SUMMARY.md                             (4.3 KB)
+  DATA_MATCHING_VERIFICATION.md                      (3.2 KB)
+  Draft_Email.txt                                    (3.8 KB)
+  DRAFT_EMAIL_SHORT.txt                              (1.3 KB)
+  EMAIL_TO_ANNETTE_FINAL.txt                         (2.1 KB)
+  FILE_MANIFEST.txt                                  (0.0 KB)
+  LAKE_OMAPERE_MODEL_READY.md                        (11.0 KB)
+  MODEL_SETUP_SUMMARY.md                             (6.1 KB)
+  README.md                                          (3.1 KB)
+  SESSION_SUMMARY.txt                                (8.3 KB)
+
+Analysis_Scripts/
+--------------------------------------------------------------------------------
+  analyze_coverage_levels.py                         (5.7 KB)
+  cleanup_and_organize.py                            (8.2 KB)
+  create_scenarios.py                                (4.2 KB)
+  explore_clues_spreadsheet.py                       (1.5 KB)
+  extract_clues_data.py                              (2.6 KB)
+  find_p_columns.py                                  (2.9 KB)
+  prepare_cw_files.py                                (5.3 KB)
+  prepare_model_inputs.py                            (9.0 KB)
+
+CW_Analysis_Results/
+--------------------------------------------------------------------------------
+  CW_Coverage_Analysis_Report.txt                    (3.8 KB)
+  CW_Coverage_Categories.csv                         (0.8 KB)
+  CW_Coverage_CORRECTED.csv                          (2.6 KB)
+  CW_Coverage_CORRECTED.xlsx                         (7.8 KB)
+
+CLUES_Data/
+--------------------------------------------------------------------------------
+  LakeAreaUpdate.xlsx                                (207.2 KB)
+  TP_noMit_LakeOnly+0.66m.xlsb                       (1,488.5 KB)
+  TP_noMit_LakeOnly_baseline.xlsb                    (313.3 KB)
+
+Model/
+--------------------------------------------------------------------------------
+  BaselineTemp.py                                    (6.9 KB)
+  Check.csv                                          (26.9 KB)
+  CombinationShadeTempOnly.py                        (7.5 KB)
+  CostTables.py                                      (15.0 KB)
+  LakeOmapere_Routing_Template.py                    (10.1 KB)
+  LRF_tablesRevHt.py                                 (20.8 KB)
+  PlacementRules.py                                  (3.6 KB)
+  Routing.py                                         (6.1 KB)
+  Splitter.py                                        (15.1 KB)
+  SSinstreamXR.csv                                   (726.7 KB)
+  StandAlone1.1.py                                   (76.0 KB)
+  StandAloneDNZ.py                                   (64.4 KB)
+  StandAloneDNZ2.py                                  (66.0 KB)
+  StandAloneDNZ2_Wetland066m.py                      (66.0 KB)
+  StandAloneShade.py                                 (41.8 KB)
+  StandAloneShadeCombiRun.py                         (39.4 KB)
+
+Archive/
+--------------------------------------------------------------------------------
+  (empty)
+
+
+Model/
+--------------------------------------------------------------------------------
+
+  InputData/
+    Archive (R) - Shortcut.lnk                    (0.5 KB)
+    AttenCarry.csv                                (30,259.5 KB)
+    AttenCarry_baseline.csv                       (36,047.7 KB)
+    AttenCarry_wetland_066m.csv                   (36,047.6 KB)
+    Bank.csv                                      (16,292.2 KB)
+    CatchmentData.xlsx                            (565,453.4 KB)
+    CLUESloads.csv                                (93,347.7 KB)
+    CLUESloads.xlsx                               (115,209.7 KB)
+    CLUESloads9Dec.csv                            (99,170.1 KB)
+    CLUESloads_baseline.csv                       (103,577.5 KB)
+    CLUESloads_wetland_066m.csv                   (103,577.3 KB)
+    CLUESloadsDec10.csv                           (99,896.1 KB)
+    CLUESloadsDec10.xlsx                          (303,266.9 KB)
+    CLUESloadsNov19.xlsx                          (300,430.3 KB)
+    CurrentState.csv                              (66,502.4 KB)
+    CurrentStateCOMBI.csv                         (115.9 KB)
+    CurrentStateUpdate.csv                        (73,623.1 KB)
+    CW_Subcatchments.csv                          (0.4 KB)
+    DefEC_20Nov23NTracing.xlsx                    (458,892.5 KB)
+    DefEC_20Nov23PTracing.xlsx                    (424,274.6 KB)
+    ... and 16 more files
+
+  SelectionFiles/
+    AhuririEst.csv                                (10,641.5 KB)
+    LakeOmapere_Selection.csv                     (10,641.5 KB)
+    Pokaiwhenua.csv                               (10,641.5 KB)
+    REC2_5.csv                                    (10,641.5 KB)
+
+  Lookups/
+    ContaminantSplits.xlsx                        (27.5 KB)
+    Costs.xlsx                                    (12.9 KB)
+    LRFs.xlsx                                     (112.7 KB)
+    LRFs_years.xlsx                               (203.5 KB)
+    MaximumLRFs.nc                                (1,891,848.6 KB)
+    MaximumLRFs_RB30cm_MFB10m.nc                  (1,891,848.4 KB)
+    MaximumLRFsRevHt.nc                           (1,889,518.4 KB)
+    MaximumLRFsRevHt10m.nc                        (1,891,848.4 KB)
+    MaximumLRFsRevHt1_2m.nc                       (1,891,848.4 KB)
+    MaximumLRFsRevHt5m.nc                         (1,891,848.4 KB)
+    MedianLRFs.nc                                 (1,891,848.6 KB)
+    MedianLRFs22Feb24.nc                          (1,891,848.6 KB)
+    MedianLRFs22Feb24b.nc                         (1,891,848.6 KB)
+    MedianLRFs_RB30cm_MFB10m.nc                   (1,891,848.4 KB)
+    MedianLRFsRevHt.nc                            (1,889,518.4 KB)
+    MedianLRFsRevHt10m.nc                         (1,891,848.4 KB)
+    MedianLRFsRevHt1_2m.nc                        (1,891,848.4 KB)
+    MedianLRFsRevHt5m.nc                          (1,891,848.4 KB)
+    MinimumLRFs.nc                                (1,891,848.6 KB)
+    MinimumLRFs_RB30cm_MFB10m.nc                  (1,891,848.4 KB)
+    ... and 36 more files
+
+  Outputs/
+    BufferWidthCheck.xlsx                         (283.1 KB)
+    BufferWidthCheck_FM.xlsx                      (96,724.9 KB)
+    ReadMe.docx                                   (147.2 KB)
+    ScenRouting.py                                (5.1 KB)
+    ~$ReadMe.docx                                 (0.2 KB)

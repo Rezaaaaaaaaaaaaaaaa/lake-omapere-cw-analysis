@@ -1,21 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(timeout:*)",
-      "Bash(dir:*)",
-      "Bash(powershell -Command \"Get-ChildItem -Force | Select-Object Name, PSIsContainer | Format-Table -AutoSize\")",
-      "Bash(powershell -Command \"Get-ChildItem Results -Force | Select-Object Name, PSIsContainer\")",
-      "Bash(powershell -Command:*)",
-      "Bash(move \"analyze_clay_soils.py\" \"Analysis_Scripts\"\" && move \"analyze_flow_paths.py\" \"Analysis_Scripts\"\")",
-      "Bash(move \"create_comparison_analysis.py\" \"Analysis_Scripts\"\" && move \"create_project_summary.py\" \"Analysis_Scripts\"\")",
-      "Bash(move \"create_schematics.py\" \"Analysis_Scripts\"\" && move \"lake_omapere_complete_analysis.py\" \"Analysis_Scripts\"\")",
-      "Bash(move \"lake_omapere_routing.py\" \"Analysis_Scripts\"\" && move \"monitor_and_analyze.py\" \"Analysis_Scripts\"\")",
-      "Bash(mv:*)",
-      "Bash(rm:*)",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nCleanup: Reorganize repository structure for clarity\n\n- Moved Python analysis scripts from root to Analysis_Scripts/ directory\n- Removed temporary status/summary markdown files\n- Removed temporary PowerShell and utility scripts\n- Updated .gitignore to exclude root-level Python scripts and temp files\n- Keep only essential documentation: README.md, LAKE_OMAPERE_MODEL_READY.md, ROUTING_ANALYSIS_COMPLETE.md, SCHEMATICS_README.md\n- Organized analysis scripts for better maintainability\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git config:*)",
-      "Bash(git commit:*)"
+      "Bash(powershell -File:*)"
     ],
     "deny": [],
     "ask": []
