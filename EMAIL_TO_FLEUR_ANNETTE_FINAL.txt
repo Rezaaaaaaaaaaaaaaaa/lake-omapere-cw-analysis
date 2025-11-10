@@ -1,0 +1,156 @@
+Subject: Lake Ōmāpere CW Analysis - Final Results
+
+Hi Fleur and Annette,
+
+I've completed the Lake Ōmāpere CW mitigation analysis. Here's a summary of the methodology and key results.
+
+========================================
+ANALYSIS SCOPE
+========================================
+
+50 Lake Ōmāpere catchment reaches
+32 reaches with CW coverage (64%)
+Baseline scenario: CLUESloads_baseline.csv (includes +0.66m lake rise)
+Total baseline load: 2.30 t/y TP
+
+========================================
+METHODOLOGY
+========================================
+
+Step 1: P Fraction Splitting (ContaminantSplits.xlsx)
+  - PartP (Particulate): 50%
+  - DRP (Dissolved Reactive): 25%
+  - DOP (Dissolved Organic): 25%
+
+Step 2: Bank Erosion Allocation
+  - 50% of each fraction → Bank Erosion (NOT mitigated)
+  - 50% of each fraction → HYPE pathways (mitigated)
+
+Step 3: HYPE Pathway Distribution (Hype.csv)
+  - SR (Surface Runoff), TD (Tile Drainage), IF (Interflow)
+  - SG (Shallow GW), DG (Deep GW), SD (Surface Drainage)
+  - Each reach has unique % distribution
+
+Step 4: Coverage Category Assignment
+  - >4% coverage: ExtCode 1 (HIGH)
+  - 2-4% coverage: ExtCode 2 (MEDIUM)
+  - <2% coverage: ExtCode 3 (LOW)
+
+Step 5: Apply LRFs (LRFs_years.xlsx Sheet 'CW')
+
+  ExtCode 1 (HIGH >4%): PartP 100% removal, DRP/DOP 77% removal
+  ExtCode 2 (MEDIUM 2-4%): PartP 100% removal, DRP/DOP 58% removal
+  ExtCode 3 (LOW <2%): PartP 100% removal, DRP/DOP 52% removal
+
+  Special cases:
+  - Bank Erosion: NOT mitigated (100% remaining)
+  - Deep GW dissolved P: NOT mitigated (bypasses CW)
+
+Step 6: Clay Constraint (FSLData.csv)
+  - If clay >50%: LRF = 0 (no CW effectiveness)
+
+Step 7: Routing (Hydroedge2_5.csv, AttenCarry.csv)
+  - Network routing with PstreamCarry attenuation factors
+  - Mean PstreamCarry = 0.97 (minimal in-stream loss)
+  - Routing amplification = 1.0
+
+========================================
+KEY RESULTS
+========================================
+
+OVERALL EFFECTIVENESS:
+  Baseline TP:         2.30 t/y
+  With CW:             1.54 t/y
+  Total Reduction:     0.75 t/y (32.8%)
+
+BY COVERAGE CATEGORY:
+  High (>4%):    13 reaches, 39.4% avg reduction
+  Medium (2-4%):  5 reaches, 36.8% avg reduction
+  Low (<2%):     14 reaches, 36.1% avg reduction
+  No CW:         18 reaches, 0% reduction
+
+BASELINE COMPOSITION:
+  Agricultural (TPAgGen): 1.83 t/y (79.5%)
+  Sediment (soilP):       0.17 t/y (7.6%)
+  Other (TPGen):          0.30 t/y (12.9%)
+
+CW COVERAGE:
+  Total area: 349.88 ha
+  Mean: 7.0% of reach area
+  Max: 68% (reach 1010359)
+
+========================================
+DATA FILES USED
+========================================
+
+CLUESloads_baseline.csv - Baseline TP loads (TPAgGen, soilP, TPGen)
+CW_Coverage_GIS_CALCULATED.xlsx - CW coverage % by reach
+ContaminantSplits.xlsx - P fraction splits (50/25/25)
+Hype.csv - HYPE pathway % distribution
+LRFs_years.xlsx - Load reduction factors by coverage/fraction
+FSLData.csv - Clay % for soil constraint
+AttenCarry.csv - Stream attenuation (PstreamCarry)
+Hydroedge2_5.csv - Network connectivity (routing)
+
+========================================
+FILES DELIVERED
+========================================
+
+Location: O:\TKIL2602\Working\Lake_Omapere_CW_Results_20251110_Final\
+
+Data (3 files):
+  - Lake_Omapere_Analysis_Results.csv (full: 50×117)
+  - Lake_Omapere_CW_Analysis_DETAILED.xlsx
+  - Lake_Omapere_CW_Analysis_SIMPLE.xlsx (simplified: 50×17)
+
+Maps (5 files):
+  - CW_Coverage_Map.png
+  - TP_Baseline_Map.png, TP_WithCW_Map.png
+  - TP_Reduction_Map.png, TP_ReductionPercent_Map.png
+
+Figures (2 files):
+  - CW_Coverage_Distribution.png
+  - TP_Reduction_by_Coverage.png
+
+Summary (2 files):
+  - analysis_summary.json, analysis_summary.txt
+
+========================================
+KEY FINDINGS
+========================================
+
+1. PartP (Particulate P) has 100% removal across all coverage levels - this drives overall effectiveness
+
+2. Dissolved P (DRP/DOP) removal varies: 77% (high), 58% (medium), 52% (low)
+
+3. Bank erosion (50% of load) limits maximum possible reduction to ~50%
+
+4. Deep groundwater dissolved P bypasses CWs (not mitigated)
+
+5. Higher CW coverage gives better reduction: 39.4% vs 36.1%
+
+========================================
+QUESTIONS FOR DISCUSSION
+========================================
+
+1. Bank erosion 50% - do you have Northland-specific data for refinement?
+
+2. Deep GW bypass - does this align with Lake Ōmāpere hydrology?
+
+3. Coverage thresholds (<2%, 2-4%, >4%) - appropriate for Type 1 GW and Type 2 SW CWs?
+
+4. PstreamCarry factors - should these be adjusted for +0.66m lake scenario?
+
+5. Next steps - presentation format? Sensitivity analysis? Additional scenarios?
+
+========================================
+
+All calculations verified and results consistent across output files.
+
+Please let me know if you need clarification on any calculations or would like additional analysis.
+
+Best regards,
+Reza
+
+Project: TKIL2602 - Lake Ōmāpere Modelling
+Date: November 10, 2025

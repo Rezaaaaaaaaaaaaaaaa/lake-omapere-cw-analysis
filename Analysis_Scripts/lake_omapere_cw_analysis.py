@@ -85,6 +85,11 @@ class Config:
     FSL_DATA_CSV = "Model/InputData/FSLData.csv"
     LRF_XLSX = "Model/Lookups/LRFs_years.xlsx"
 
+    # Additional data files for P fractions and pathways (Annette's methodology)
+    CONTAMINANT_SPLITS_XLSX = "Model/Lookups/ContaminantSplits.xlsx"
+    LANDUSE_CSV = "Model/InputData/DefLUREC2_5.csv"
+    HYPE_CSV = "Model/InputData/Hype.csv"
+
     # Shapefile paths for mapping
     RIVER_SHAPEFILE = "Shapefiles/Reference/Riverlines.shp"
     CATCHMENT_SHAPEFILE = "Shapefiles/Reference/Catchment.shp"
@@ -119,6 +124,24 @@ class Config:
     COVERAGE_THRESHOLDS = {
         'low': 2.0,
         'medium': 4.0
+    }
+
+    # P Fraction splits (from Annette's ContaminantSplits.xlsx)
+    P_FRACTIONS = {
+        'PartP': 0.50,  # Particulate P
+        'DRP': 0.25,    # Dissolved Reactive P
+        'DOP': 0.25     # Dissolved Organic P
+    }
+
+    # Pathway names (from HYPE and Bank Erosion)
+    PATHWAYS = ['SR', 'SD', 'TD', 'IF', 'SG', 'DG', 'BE']
+
+    # LRF pathway mapping (from LRFs_years.xlsx CW sheet)
+    # Maps coverage category to pathway-specific LRFs
+    LRF_PATHWAY_MAPPING = {
+        'low': {'ExtCode': 1, 'Extent': '<2'},       # <2% coverage
+        'medium': {'ExtCode': 2, 'Extent': '2 to 4'}, # 2-4% coverage
+        'high': {'ExtCode': 3, 'Extent': '>4'}        # >4% coverage
     }
 
     # Lake Omapere specific reaches (50 reaches to analyze)
@@ -311,6 +334,152 @@ class DataLoader:
             print(f"  Warning: Error loading clay data: {e}")
             return None
 
+    @staticmethod
+    def load_p_fractions(filepath):
+        """
+        Load P fraction splits from ContaminantSplits.xlsx.
+
+        Args:
+            filepath: Path to ContaminantSplits.xlsx
+
+        Returns:
+            Dictionary with P fraction splits (PartP, DRP, DOP)
+        """
+        print(f"\nLoading P fraction splits from: {filepath}")
+
+        if not os.path.exists(filepath):
+            print(f"  Warning: P fractions file not found, using defaults")
+            return Config.P_FRACTIONS
+
+        try:
+            df = pd.read_excel(filepath, sheet_name='P')
+            fractions = {}
+            for _, row in df.iterrows():
+                fractions[row['Form']] = row['Fraction']
+
+            print(f"  Loaded P fractions: {fractions}")
+            return fractions
+        except Exception as e:
+            print(f"  Warning: Error loading P fractions: {e}, using defaults")
+            return Config.P_FRACTIONS
+
+    @staticmethod
+    def load_landuse(filepath):
+        """
+        Load land use percentages from DefLUREC2_5.csv.
+
+        Args:
+            filepath: Path to DefLUREC2_5.csv
+
+        Returns:
+            DataFrame with reach_id and land use percentage columns
+        """
+        print(f"\nLoading land use data from: {filepath}")
+
+        if not os.path.exists(filepath):
+            print(f"  Warning: Land use file not found")
+            return None
+
+        try:
+            df = pd.read_csv(filepath)
+            print(f"  Loaded land use for {len(df)} reaches")
+
+            # Rename NZSEGMENT to reach_id for consistency
+            if 'NZSEGMENT' in df.columns:
+                df = df.rename(columns={'NZSEGMENT': 'reach_id'})
+
+            # Key columns to keep
+            lu_cols = ['reach_id', 'DAIRY', 'SBINTEN', 'SBHILL', 'SBHIGH', 'DEER',
+                      'OTHER_ANIM', 'MAIZE', 'PLANT_FOR', 'NAT_FOR', 'SCRUB',
+                      'URBAN', 'Pasture', 'HortCrop', 'All']
+
+            # Keep only columns that exist
+            keep_cols = [col for col in lu_cols if col in df.columns]
+            df = df[keep_cols]
+
+            print(f"  Retained {len(keep_cols)} land use columns")
+            return df
+        except Exception as e:
+            print(f"  Warning: Error loading land use: {e}")
+            return None
+
+    @staticmethod
+    def load_hype_pathways(filepath):
+        """
+        Load HYPE pathway percentages from Hype.csv.
+
+        Args:
+            filepath: Path to Hype.csv
+
+        Returns:
+            DataFrame with reach_id and pathway percentages (SR, TD, IF, SG, DG)
+        """
+        print(f"\nLoading HYPE pathway data from: {filepath}")
+
+        if not os.path.exists(filepath):
+            print(f"  Warning: HYPE file not found")
+            return None
+
+        try:
+            df = pd.read_csv(filepath)
+            print(f"  Loaded HYPE pathways for {len(df)} reaches")
+
+            # Rename NZSEGMENT to reach_id
+            if 'NZSEGMENT' in df.columns:
+                df = df.rename(columns={'NZSEGMENT': 'reach_id'})
+
+            # Keep pathway columns
+            pathway_cols = ['reach_id', 'HYDSEQ', 'SR', 'TD', 'IF', 'SG', 'DG']
+            keep_cols = [col for col in pathway_cols if col in df.columns]
+            df = df[keep_cols]
+
+            # Replace nulls with default values (equal split: 25% each for SR, IF, SG, DG; 0% for TD)
+            df['SR'] = df['SR'].fillna(25.0)
+            df['IF'] = df['IF'].fillna(25.0)
+            df['SG'] = df['SG'].fillna(25.0)
+            df['DG'] = df['DG'].fillna(25.0)
+            df['TD'] = df['TD'].fillna(0.0)
+
+            print(f"  HYPE pathway ranges:")
+            for col in ['SR', 'TD', 'IF', 'SG', 'DG']:
+                if col in df.columns:
+                    print(f"    {col}: {df[col].min():.1f}% - {df[col].max():.1f}%")
+
+            return df
+        except Exception as e:
+            print(f"  Warning: Error loading HYPE pathways: {e}")
+            return None
+
+    @staticmethod
+    def load_pathway_lrfs(filepath):
+        """
+        Load pathway-specific LRFs from LRFs_years.xlsx.
+
+        Args:
+            filepath: Path to LRFs_years.xlsx
+
+        Returns:
+            DataFrame with pathway-specific LRF values for CW mitigation
+        """
+        print(f"\nLoading pathway-specific LRFs from: {filepath}")
+
+        if not os.path.exists(filepath):
+            print(f"  Warning: LRF file not found")
+            return None
+
+        try:
+            df = pd.read_excel(filepath, sheet_name='CW')
+            print(f"  Loaded {len(df)} LRF entries for CW mitigation")
+
+            # Show available columns for P fractions
+            p_cols = [col for col in df.columns if any(x in col for x in ['PartP', 'DRP', 'DOP'])]
+            print(f"  P fraction LRF columns available: {p_cols}")
+
+            return df
+        except Exception as e:
+            print(f"  Warning: Error loading pathway LRFs: {e}")
+            return None
+
 
 # ============================================================================
 # SECTION 2: GENERATED LOADS CALCULATION
@@ -415,6 +584,153 @@ class GeneratedLoadsCalculator:
 
         print(f"  Baseline mean: {results['generated_baseline'].mean():.4f} t/y")
         print(f"  Wetland mean:  {results['generated_wetland'].mean():.4f} t/y")
+
+        return results
+
+
+# ============================================================================
+# SECTION 2B: P FRACTION AND PATHWAY SPLITTING (Annette's Methodology)
+# ============================================================================
+
+class PFractionPathwayCalculator:
+    """Split TP loads into P fractions and HYPE pathways following Annette's model"""
+
+    @staticmethod
+    def split_tp_into_fractions(tp_loads, p_fractions, include_sources=True):
+        """
+        Split total TP into P fractions (PartP, DRP, DOP).
+
+        Following Annette's Splitter.py methodology:
+        - PartP (Particulate P): 50% of TP
+        - DRP (Dissolved Reactive P): 25% of TP
+        - DOP (Dissolved Organic P): 25% of TP
+
+        Args:
+            tp_loads: DataFrame with TP load columns
+            p_fractions: Dict with fraction splits {'PartP': 0.50, 'DRP': 0.25, 'DOP': 0.25}
+            include_sources: If True, split by source (Ag, nonAg, ps)
+
+        Returns:
+            DataFrame with P fraction columns added
+        """
+        print("\nSplitting TP into P fractions...")
+
+        results = tp_loads.copy()
+
+        # Get column names for different scenarios
+        tp_columns = [col for col in tp_loads.columns if 'generated' in col or 'total_load' in col]
+
+        for tp_col in tp_columns:
+            for fract_name, fract_pct in p_fractions.items():
+                new_col = f"{tp_col}_{fract_name}"
+                results[new_col] = results[tp_col] * fract_pct
+                print(f"  Created {new_col}: {fract_pct*100}% of {tp_col}")
+
+        print(f"  Split complete for {len(results)} reaches")
+        return results
+
+    @staticmethod
+    def split_by_hype_pathways(loads_df, hype_df, p_fractions):
+        """
+        Split P fractions into HYPE pathways (SR, SD, TD, IF, SG, DG).
+
+        Following Annette's methodology:
+        - Surface Runoff (SR): Variable %
+        - Surface Drainage (SD): Half of SR where tile drains present (TD > 0)
+        - Tile Drainage (TD): Variable %
+        - Interflow (IF): Variable %
+        - Shallow Groundwater (SG): Variable %
+        - Deep Groundwater (DG): Variable %
+
+        Bank Erosion (BE) is split based on sediment erosion percentage.
+
+        Args:
+            loads_df: DataFrame with P fraction columns
+            hype_df: DataFrame with HYPE pathway percentages
+            p_fractions: Dict with P fraction names
+
+        Returns:
+            DataFrame with pathway-specific P fraction columns
+        """
+        print("\nSplitting P fractions into HYPE pathways...")
+
+        # Merge HYPE data
+        results = loads_df.merge(hype_df, on='reach_id', how='left')
+
+        # Fill missing HYPE values with defaults
+        results['SR'] = results['SR'].fillna(25.0)
+        results['TD'] = results['TD'].fillna(0.0)
+        results['IF'] = results['IF'].fillna(25.0)
+        results['SG'] = results['SG'].fillna(25.0)
+        results['DG'] = results['DG'].fillna(25.0)
+
+        # Calculate SD (Surface Drainage) - half of SR where TD > 0
+        results['SD'] = 0.0
+        has_td = results['TD'] > 0
+        results.loc[has_td, 'SD'] = results.loc[has_td, 'SR'] / 2.0
+        results.loc[has_td, 'SR'] = results.loc[has_td, 'SR'] / 2.0
+
+        print(f"  Reaches with tile drainage (SD calculated): {has_td.sum()}")
+
+        # Split each P fraction by pathway
+        pathways = ['SR', 'SD', 'TD', 'IF', 'SG', 'DG']
+
+        # Find REMAINDER columns ONLY (not BE columns)
+        # Only remainder columns should be distributed across HYPE pathways
+        p_fract_cols = []
+        for col in loads_df.columns:
+            if any(fract in col for fract in p_fractions.keys()) and '_remainder' in col:
+                p_fract_cols.append(col)
+
+        print(f"  Splitting {len(p_fract_cols)} P fraction remainder columns across {len(pathways)} pathways")
+
+        for p_col in p_fract_cols:
+            for pathway in pathways:
+                # Calculate pathway-specific load
+                pathway_col = f"{p_col}_{pathway}"
+                results[pathway_col] = results[p_col] * (results[pathway] / 100.0)
+
+        print(f"  Created {len(p_fract_cols) * len(pathways)} pathway-specific columns")
+
+        return results
+
+    @staticmethod
+    def calculate_bank_erosion_split(loads_df, sediment_pct=0.6):
+        """
+        Calculate Bank Erosion (BE) component.
+
+        Following Annette's methodology:
+        - For N and P: BE is based on sediment bank erosion percentage from NZSYE
+        - Default assumption: 60% of load comes from bank erosion
+        - Remainder goes through HYPE pathways
+
+        Args:
+            loads_df: DataFrame with P loads
+            sediment_pct: Bank erosion percentage (default 0.6 = 60%)
+
+        Returns:
+            DataFrame with BE columns added
+        """
+        print("\nCalculating Bank Erosion (BE) split...")
+
+        results = loads_df.copy()
+
+        # Find P fraction columns to split
+        p_fract_cols = [col for col in loads_df.columns
+                       if any(fract in col for fract in Config.P_FRACTIONS.keys())
+                       and not any(path in col for path in Config.PATHWAYS)]
+
+        for p_col in p_fract_cols:
+            # BE load
+            be_col = f"{p_col}_BE"
+            results[be_col] = results[p_col] * sediment_pct
+
+            # Remainder for HYPE pathways
+            remainder_col = f"{p_col}_remainder"
+            results[remainder_col] = results[p_col] * (1 - sediment_pct)
+
+        print(f"  Bank erosion split applied to {len(p_fract_cols)} P fraction columns")
+        print(f"  BE percentage: {sediment_pct*100}%")
 
         return results
 
@@ -561,6 +877,202 @@ class CWMitigationCalculator:
         print(f"    Medium (2-4%): {(results['coverage_category']=='medium').sum()}")
         print(f"    Low (<2%): {(results['coverage_category']=='low').sum()}")
         print(f"    None: {(results['coverage_category']=='none').sum()}")
+
+        return results
+
+    @staticmethod
+    def apply_pathway_specific_mitigation(results_df, pathway_lrfs_df, p_fractions):
+        """
+        Apply pathway-specific CW mitigation with different LRFs for each P fraction.
+
+        PHASE 2 RULES (from Fleur's email):
+        1. Bank Erosion (BE): NOT mitigated by CWs (all fractions pass through)
+        2. Deep Groundwater (DG): Dissolved P (DRP/DOP) NOT mitigated (bypasses CW)
+        3. All other pathways (SR, SD, TD, IF, SG): Apply pathway-specific LRFs
+           - PartP: 100% reduction (LRF = 0% remaining)
+           - DRP/DOP: Variable by coverage (23%/42%/48% remaining)
+
+        Args:
+            results_df: DataFrame with pathway-specific loads
+            pathway_lrfs_df: DataFrame with LRF values from LRFs_years.xlsx
+            p_fractions: Dict with P fraction names
+
+        Returns:
+            DataFrame with CW-mitigated pathway loads
+        """
+        print("\n" + "="*80)
+        print("PHASE 2: Applying Pathway-Specific CW Mitigation")
+        print("="*80)
+
+        results = results_df.copy()
+
+        # Build LRF lookup table from median values
+        # CORRECTED MAPPING: The file has ExtCode backwards!
+        # ExtCode 1 has 23% remaining (77% removal) = BEST = should be HIGH coverage
+        # ExtCode 3 has 48% remaining (52% removal) = WORST = should be LOW coverage
+        # ExtCode: 1 = >4% (HIGH - most removal), 2 = 2-4% (MEDIUM), 3 = <2% (LOW - least removal)
+        lrf_lookup = {}
+        for _, row in pathway_lrfs_df.iterrows():
+            if row['ExtCode'] == 1:
+                coverage_cat = 'high'  # SWAPPED: 1 -> high (best removal)
+            elif row['ExtCode'] == 2:
+                coverage_cat = 'medium'
+            else:  # ExtCode == 3
+                coverage_cat = 'low'  # SWAPPED: 3 -> low (worst removal)
+
+            # Use median values (% remaining after CW treatment)
+            # Note: These are % REMAINING, so lower = more removal
+            lrf_lookup[(coverage_cat, 'PartP')] = row['PartPmed'] / 100.0  # Convert % to fraction
+            lrf_lookup[(coverage_cat, 'DRP')] = row['DRPmed'] / 100.0
+
+            # Handle DOP column name variation
+            if 'DOMed' in pathway_lrfs_df.columns:
+                lrf_lookup[(coverage_cat, 'DOP')] = row['DOMed'] / 100.0
+            elif 'DOPmed' in pathway_lrfs_df.columns:
+                lrf_lookup[(coverage_cat, 'DOP')] = row['DOPmed'] / 100.0
+            else:
+                lrf_lookup[(coverage_cat, 'DOP')] = row['DRPmed'] / 100.0  # Fallback to DRP
+
+        print("\nLRF Lookup Table (% remaining after CW treatment):")
+        print("  Low coverage (<2%):")
+        print(f"    PartP: {lrf_lookup[('low', 'PartP')]*100:.0f}% remaining (= {(1-lrf_lookup[('low', 'PartP')])*100:.0f}% reduction)")
+        print(f"    DRP:   {lrf_lookup[('low', 'DRP')]*100:.0f}% remaining (= {(1-lrf_lookup[('low', 'DRP')])*100:.0f}% reduction)")
+        print(f"    DOP:   {lrf_lookup[('low', 'DOP')]*100:.0f}% remaining (= {(1-lrf_lookup[('low', 'DOP')])*100:.0f}% reduction)")
+        print("  Medium coverage (2-4%):")
+        print(f"    PartP: {lrf_lookup[('medium', 'PartP')]*100:.0f}% remaining")
+        print(f"    DRP:   {lrf_lookup[('medium', 'DRP')]*100:.0f}% remaining")
+        print(f"    DOP:   {lrf_lookup[('medium', 'DOP')]*100:.0f}% remaining")
+        print("  High coverage (>4%):")
+        print(f"    PartP: {lrf_lookup[('high', 'PartP')]*100:.0f}% remaining")
+        print(f"    DRP:   {lrf_lookup[('high', 'DRP')]*100:.0f}% remaining")
+        print(f"    DOP:   {lrf_lookup[('high', 'DOP')]*100:.0f}% remaining")
+
+        # Mitigated pathways (NOT Bank Erosion, NOT Deep GW)
+        mitigated_pathways = ['SR', 'SD', 'TD', 'IF', 'SG']
+
+        # For each P fraction
+        for fraction in p_fractions.keys():
+            print(f"\nProcessing {fraction}...")
+
+            # Find wetland REMAINDER pathway columns for this fraction
+            # These are columns like "generated_wetland_PartP_remainder_SR"
+            wetland_pathway_cols = [col for col in results.columns
+                                   if 'generated_wetland' in col
+                                   and fraction in col
+                                   and '_remainder_' in col
+                                   and any(path in col for path in mitigated_pathways)]
+
+            print(f"  Found {len(wetland_pathway_cols)} wetland remainder pathway columns to mitigate")
+
+            # Apply CW mitigation to each pathway
+            for wetland_col in wetland_pathway_cols:
+                # Determine CW column name
+                cw_col = wetland_col.replace('generated_wetland', 'generated_cw')
+
+                # Initialize CW column with wetland values (no mitigation by default)
+                results[cw_col] = results[wetland_col].copy()
+
+                # Apply mitigation only to reaches with CW coverage > 0
+                has_cw = results['CW_Coverage_Percent'] > 0
+
+                if has_cw.sum() > 0:
+                    # For each coverage category
+                    for coverage_cat in ['low', 'medium', 'high']:
+                        # Get reaches in this category with CW
+                        mask = (results['coverage_category'] == coverage_cat) & has_cw
+
+                        if mask.sum() > 0:
+                            # Get LRF for this fraction and coverage
+                            lrf = lrf_lookup.get((coverage_cat, fraction), 0.0)
+
+                            # Apply LRF (lrf = fraction REMAINING after treatment)
+                            # CW load = wetland load × lrf
+                            results.loc[mask, cw_col] = results.loc[mask, wetland_col] * lrf
+
+            # Handle Bank Erosion (BE) - NO MITIGATION
+            be_col_wetland = f'generated_wetland_{fraction}_BE'
+            be_col_cw = f'generated_cw_{fraction}_BE'
+
+            if be_col_wetland in results.columns:
+                # BE passes through unchanged
+                results[be_col_cw] = results[be_col_wetland].copy()
+                print(f"  Bank Erosion ({fraction}): NO mitigation (passes through)")
+
+            # Handle Deep Groundwater (DG) - Dissolved P NOT mitigated
+            dg_col_wetland = f'generated_wetland_{fraction}_remainder_DG'
+            dg_col_cw = f'generated_cw_{fraction}_remainder_DG'
+
+            if dg_col_wetland in results.columns:
+                if fraction in ['DRP', 'DOP']:
+                    # Dissolved P in DG bypasses CW (no mitigation)
+                    results[dg_col_cw] = results[dg_col_wetland].copy()
+                    print(f"  Deep Groundwater ({fraction}): NO mitigation (bypasses CW)")
+                else:
+                    # PartP in DG (should already be 0, but apply LRF anyway for consistency)
+                    # Apply mitigation like other pathways
+                    has_cw = results['CW_Coverage_Percent'] > 0
+                    if has_cw.sum() > 0:
+                        for coverage_cat in ['low', 'medium', 'high']:
+                            mask = (results['coverage_category'] == coverage_cat) & has_cw
+                            if mask.sum() > 0:
+                                lrf = lrf_lookup.get((coverage_cat, fraction), 0.0)
+                                results.loc[mask, dg_col_cw] = results.loc[mask, dg_col_wetland] * lrf
+
+        # Recalculate total CW loads by summing pathway loads + BE loads
+        print("\nRecalculating total CW loads from pathway-specific loads...")
+
+        for fraction in p_fractions.keys():
+            # Find all CW remainder pathway columns for this fraction
+            cw_pathway_cols = [col for col in results.columns
+                              if 'generated_cw' in col
+                              and fraction in col
+                              and '_remainder_' in col]
+
+            # Add BE column
+            be_col = f'generated_cw_{fraction}_BE'
+
+            if cw_pathway_cols and be_col in results.columns:
+                # Sum all remainder pathways + BE to get total P fraction load
+                total_col = f'generated_cw_{fraction}'
+                results[total_col] = results[be_col] + results[cw_pathway_cols].sum(axis=1)
+                print(f"  {fraction}: Summed {len(cw_pathway_cols)} pathway columns + BE")
+            elif cw_pathway_cols:
+                # No BE column, just sum pathways
+                total_col = f'generated_cw_{fraction}'
+                results[total_col] = results[cw_pathway_cols].sum(axis=1)
+                print(f"  {fraction}: Summed {len(cw_pathway_cols)} pathway columns (no BE)")
+            elif be_col in results.columns:
+                # No pathway columns, just use BE
+                total_col = f'generated_cw_{fraction}'
+                results[total_col] = results[be_col]
+                print(f"  {fraction}: Using BE only (no pathways)")
+
+        # Recalculate total TP for CW scenario
+        generated_cw_total = 0
+        for fraction in p_fractions.keys():
+            total_col = f'generated_cw_{fraction}'
+            if total_col in results.columns:
+                generated_cw_total += results[total_col]
+
+        results['generated_cw'] = generated_cw_total
+
+        # Recalculate CW reduction
+        results['cw_reduction'] = results['generated_wetland'] - results['generated_cw']
+
+        # Statistics
+        total_wetland = results['generated_wetland'].sum()
+        total_cw = results['generated_cw'].sum()
+        total_reduction = results['cw_reduction'].sum()
+        pct_reduction = (total_reduction / total_wetland * 100) if total_wetland > 0 else 0
+
+        print("\n" + "="*80)
+        print("PHASE 2 MITIGATION RESULTS:")
+        print("="*80)
+        print(f"Total wetland load:  {total_wetland:.2f} t/y")
+        print(f"Total CW load:       {total_cw:.2f} t/y")
+        print(f"Total CW reduction:  {total_reduction:.2f} t/y ({pct_reduction:.1f}%)")
+        print(f"Reaches with CW:     {(results['CW_Coverage_Percent'] > 0).sum()}")
+        print("="*80)
 
         return results
 
@@ -787,7 +1299,7 @@ class ResultsGenerator:
     @staticmethod
     def save_results_csv(results_df, filename, output_dir=None):
         """
-        Save results to CSV file.
+        Save results to CSV file with rounded numeric values.
 
         Args:
             results_df: DataFrame to save
@@ -797,11 +1309,315 @@ class ResultsGenerator:
         if output_dir is None:
             output_dir = Config.DATA_DIR
 
+        # Create a copy to avoid modifying original
+        df_to_save = results_df.copy()
+
+        # Round numeric columns to 4 decimal places
+        numeric_cols = df_to_save.select_dtypes(include=[np.number]).columns
+        for col in numeric_cols:
+            df_to_save[col] = df_to_save[col].round(4)
+
         filepath = os.path.join(output_dir, filename)
-        results_df.to_csv(filepath, index=False)
+        df_to_save.to_csv(filepath, index=False)
         print(f"  Saved: {filepath}")
 
         return filepath
+
+    @staticmethod
+    def save_lake_omapere_excel(results_df, cw_coverage_df, filename='Lake_Omapere_CW_Analysis_DETAILED.xlsx', output_dir=None):
+        """
+        Create a nicely formatted Excel file for Lake Omapere reaches only.
+
+        Args:
+            results_df: Full results DataFrame
+            cw_coverage_df: CW coverage DataFrame with Lake Omapere reach IDs
+            filename: Output filename
+            output_dir: Output directory (uses Config.DATA_DIR if None)
+
+        Returns:
+            Path to saved Excel file
+        """
+        if not OPENPYXL_AVAILABLE:
+            print("  Warning: openpyxl not available, skipping Excel export")
+            return None
+
+        if output_dir is None:
+            output_dir = Config.DATA_DIR
+
+        print(f"\n  Creating formatted Excel file for Lake Omapere reaches...")
+
+        # Get Lake Omapere reach IDs
+        lake_reach_ids = set(cw_coverage_df['reach_id'].values)
+
+        # Filter to Lake Omapere reaches only
+        lake_results = results_df[results_df['reach_id'].isin(lake_reach_ids)].copy()
+
+        # Sort by reach_id
+        lake_results = lake_results.sort_values('reach_id')
+
+        # Select and rename columns for clarity - base columns
+        output_columns = {
+            'reach_id': 'NZSEGMENT',
+            'generated_baseline': 'Baseline_Load_tpy',
+            'generated_wetland': 'Wetland_Load_tpy',
+            'generated_cw': 'With_CW_Load_tpy',
+            'cw_reduction': 'CW_Reduction_tpy',
+            'CW_Coverage_Percent': 'CW_Coverage_%',
+            'coverage_category': 'Coverage_Category',
+            'lrf_factor': 'LRF',
+            'clay_percent': 'Clay_%',
+            'HighClay': 'Clay_Blocked',
+            'routed_baseline': 'Routed_Baseline_tpy',
+            'routed_wetland': 'Routed_Wetland_tpy',
+            'routed_cw': 'Routed_CW_tpy',
+            'routed_reduction': 'Routed_Reduction_tpy',
+            'routed_reduction_percent': 'Routed_Reduction_%'
+        }
+
+        # Add P fraction columns if available
+        p_fract_cols = {}
+        for col in lake_results.columns:
+            if any(fract in col for fract in ['PartP', 'DRP', 'DOP']):
+                # Include main P fractions and BE columns (bank erosion split)
+                # Exclude other pathway-specific columns (SR, SD, TD, IF, SG, DG) for summary
+                if not any(path in col for path in ['_SR', '_SD', '_TD', '_IF', '_SG', '_DG']):
+                    p_fract_cols[col] = col.replace('generated_', '').replace('_', ' ')
+
+        # Add land use columns if available
+        landuse_cols = {}
+        for col in ['Pasture', 'DAIRY', 'SBINTEN', 'NAT_FOR', 'SCRUB', 'URBAN']:
+            if col in lake_results.columns:
+                landuse_cols[col] = f'{col}_%'
+
+        # Add HYPE pathway columns if available
+        hype_cols = {}
+        for col in ['SR', 'IF', 'SG', 'DG', 'TD', 'SD']:
+            if col in lake_results.columns:
+                hype_cols[col] = f'{col}_Pathway_%'
+
+        # Combine all columns
+        all_columns = {**output_columns, **p_fract_cols, **landuse_cols, **hype_cols}
+
+        # Only include columns that exist in lake_results
+        available_cols = {k: v for k, v in all_columns.items() if k in lake_results.columns}
+
+        # Create output dataframe with renamed columns
+        export_df = lake_results[list(available_cols.keys())].rename(columns=available_cols)
+
+        # Calculate additional useful columns
+        export_df['Lake_Rise_Effect_tpy'] = export_df['Baseline_Load_tpy'] - export_df['Wetland_Load_tpy']
+        export_df['Lake_Rise_Effect_%'] = (export_df['Lake_Rise_Effect_tpy'] / export_df['Baseline_Load_tpy'] * 100).round(2)
+        export_df['CW_Reduction_%'] = (export_df['CW_Reduction_tpy'] / export_df['Wetland_Load_tpy'] * 100).round(2)
+        export_df['Total_Reduction_tpy'] = export_df['Baseline_Load_tpy'] - export_df['With_CW_Load_tpy']
+        export_df['Total_Reduction_%'] = (export_df['Total_Reduction_tpy'] / export_df['Baseline_Load_tpy'] * 100).round(2)
+        export_df['CW_Status'] = export_df.apply(
+            lambda row: 'No CW' if row['CW_Coverage_%'] == 0
+                        else 'Clay Blocked' if row['Clay_Blocked']
+                        else 'Effective', axis=1
+        )
+
+        # Reorder columns logically
+        final_columns = [
+            'NZSEGMENT',
+            'CW_Coverage_%',
+            'Coverage_Category',
+            'LRF',
+            'Clay_%',
+            'Clay_Blocked',
+            'CW_Status',
+            'Baseline_Load_tpy',
+            'Wetland_Load_tpy',
+            'With_CW_Load_tpy',
+            'Lake_Rise_Effect_tpy',
+            'Lake_Rise_Effect_%',
+            'CW_Reduction_tpy',
+            'CW_Reduction_%',
+            'Total_Reduction_tpy',
+            'Total_Reduction_%',
+            'Routed_Baseline_tpy',
+            'Routed_Wetland_tpy',
+            'Routed_CW_tpy',
+            'Routed_Reduction_tpy',
+            'Routed_Reduction_%'
+        ]
+
+        # Add P fractions, land use, and pathways columns to final list
+        for col in export_df.columns:
+            if col not in final_columns:
+                final_columns.append(col)
+
+        export_df = export_df[final_columns]
+
+        # Save to Excel with formatting
+        filepath = os.path.join(output_dir, filename)
+
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+            from openpyxl.utils.dataframe import dataframe_to_rows
+
+            # Create workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Lake Omapere CW Analysis"
+
+            # Write title and metadata
+            ws['A1'] = 'Lake Omapere CW Mitigation Effectiveness Analysis'
+            ws['A1'].font = Font(size=14, bold=True)
+            ws['A2'] = f'Analysis Date: {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            ws['A3'] = f'Total Reaches: {len(export_df)}'
+            ws['A4'] = f'Reaches with CW: {(export_df["CW_Coverage_%"] > 0).sum()}'
+            ws['A5'] = f'Effective CW Reaches: {(export_df["CW_Status"] == "Effective").sum()}'
+
+            # Write data starting at row 7
+            start_row = 7
+
+            # Write headers
+            for c_idx, col_name in enumerate(export_df.columns, 1):
+                cell = ws.cell(row=start_row, column=c_idx, value=col_name)
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                cell.border = Border(
+                    left=Side(style='thin'),
+                    right=Side(style='thin'),
+                    top=Side(style='thin'),
+                    bottom=Side(style='thin')
+                )
+
+            # Write data rows
+            for r_idx, row in enumerate(export_df.values, start_row + 1):
+                for c_idx, value in enumerate(row, 1):
+                    cell = ws.cell(row=r_idx, column=c_idx, value=value)
+
+                    # Apply number formatting
+                    col_name = export_df.columns[c_idx - 1]
+                    if '_tpy' in col_name:
+                        cell.number_format = '0.0000'
+                    elif '_%' in col_name or col_name == 'Clay_%' or col_name == 'CW_Coverage_%':
+                        cell.number_format = '0.00'
+                    elif col_name == 'LRF':
+                        cell.number_format = '0.00'
+
+                    # Conditional formatting for CW_Status
+                    if col_name == 'CW_Status':
+                        if value == 'Effective':
+                            cell.fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+                            cell.font = Font(color="006100")
+                        elif value == 'Clay Blocked':
+                            cell.fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+                            cell.font = Font(color="9C0006")
+                        elif value == 'No CW':
+                            cell.fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+                            cell.font = Font(color="9C5700")
+
+                    # Highlight high reductions
+                    if col_name == 'CW_Reduction_tpy' and isinstance(value, (int, float)) and value > 0.05:
+                        cell.fill = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
+
+                    cell.border = Border(
+                        left=Side(style='thin'),
+                        right=Side(style='thin'),
+                        top=Side(style='thin'),
+                        bottom=Side(style='thin')
+                    )
+
+            # Set column widths
+            column_widths = {
+                'A': 12,  # NZSEGMENT
+                'B': 12,  # CW_Coverage_%
+                'C': 15,  # Coverage_Category
+                'D': 8,   # LRF
+                'E': 10,  # Clay_%
+                'F': 12,  # Clay_Blocked
+                'G': 15,  # CW_Status
+                'H': 16,  # Baseline_Load_tpy
+                'I': 16,  # Wetland_Load_tpy
+                'J': 16,  # With_CW_Load_tpy
+                'K': 18,  # Lake_Rise_Effect_tpy
+                'L': 16,  # Lake_Rise_Effect_%
+                'M': 18,  # CW_Reduction_tpy
+                'N': 14,  # CW_Reduction_%
+                'O': 18,  # Total_Reduction_tpy
+                'P': 16,  # Total_Reduction_%
+                'Q': 18,  # Routed_Baseline_tpy
+                'R': 18,  # Routed_Wetland_tpy
+                'S': 16,  # Routed_CW_tpy
+                'T': 20,  # Routed_Reduction_tpy
+                'U': 18   # Routed_Reduction_%
+            }
+
+            for col, width in column_widths.items():
+                ws.column_dimensions[col].width = width
+
+            # Freeze panes (freeze header row)
+            ws.freeze_panes = ws['A8']
+
+            # Add summary sheet
+            ws_summary = wb.create_sheet("Summary Statistics")
+            ws_summary['A1'] = 'Summary Statistics - Lake Omapere CW Analysis'
+            ws_summary['A1'].font = Font(size=14, bold=True)
+
+            summary_data = [
+                ['Metric', 'Value', 'Unit'],
+                ['', '', ''],
+                ['LOADS', '', ''],
+                ['Baseline TP Load', export_df['Baseline_Load_tpy'].sum(), 't/y'],
+                ['Wetland TP Load', export_df['Wetland_Load_tpy'].sum(), 't/y'],
+                ['With CW TP Load', export_df['With_CW_Load_tpy'].sum(), 't/y'],
+                ['', '', ''],
+                ['REDUCTIONS', '', ''],
+                ['Lake Rise Reduction', export_df['Lake_Rise_Effect_tpy'].sum(), 't/y'],
+                ['CW Reduction', export_df['CW_Reduction_tpy'].sum(), 't/y'],
+                ['Total Reduction', export_df['Total_Reduction_tpy'].sum(), 't/y'],
+                ['', '', ''],
+                ['PERCENTAGES', '', ''],
+                ['Lake Rise Effect', (export_df['Lake_Rise_Effect_tpy'].sum() / export_df['Baseline_Load_tpy'].sum() * 100), '%'],
+                ['CW Mitigation', (export_df['CW_Reduction_tpy'].sum() / export_df['Wetland_Load_tpy'].sum() * 100), '%'],
+                ['Total Reduction', (export_df['Total_Reduction_tpy'].sum() / export_df['Baseline_Load_tpy'].sum() * 100), '%'],
+                ['', '', ''],
+                ['CW IMPLEMENTATION', '', ''],
+                ['Total Reaches', len(export_df), 'reaches'],
+                ['Reaches with CW', (export_df['CW_Coverage_%'] > 0).sum(), 'reaches'],
+                ['Effective CW Reaches', (export_df['CW_Status'] == 'Effective').sum(), 'reaches'],
+                ['Clay Blocked Reaches', (export_df['CW_Status'] == 'Clay Blocked').sum(), 'reaches'],
+                ['No CW Reaches', (export_df['CW_Status'] == 'No CW').sum(), 'reaches'],
+            ]
+
+            for r_idx, row in enumerate(summary_data, 1):
+                for c_idx, value in enumerate(row, 1):
+                    cell = ws_summary.cell(row=r_idx, column=c_idx, value=value)
+                    if r_idx == 1:
+                        cell.font = Font(size=14, bold=True)
+                    elif c_idx == 1 and value in ['LOADS', 'REDUCTIONS', 'PERCENTAGES', 'CW IMPLEMENTATION']:
+                        cell.font = Font(bold=True)
+                        cell.fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
+
+                    # Number formatting
+                    if c_idx == 2 and isinstance(value, (int, float)):
+                        if r_idx >= 13 and r_idx <= 16:  # Percentages
+                            cell.number_format = '0.00'
+                        elif r_idx >= 3 and r_idx <= 11:  # Loads and reductions
+                            cell.number_format = '0.0000'
+
+            ws_summary.column_dimensions['A'].width = 30
+            ws_summary.column_dimensions['B'].width = 15
+            ws_summary.column_dimensions['C'].width = 10
+
+            # Save workbook
+            wb.save(filepath)
+            print(f"  Saved formatted Excel: {filepath}")
+            print(f"    - Sheet 1: Lake Omapere CW Analysis ({len(export_df)} reaches)")
+            print(f"    - Sheet 2: Summary Statistics")
+
+            return filepath
+
+        except Exception as e:
+            print(f"  Error creating formatted Excel: {e}")
+            # Fallback to simple Excel export
+            export_df.to_excel(filepath, index=False, sheet_name='Lake Omapere CW Analysis')
+            print(f"  Saved simple Excel: {filepath}")
+            return filepath
 
     @staticmethod
     def generate_summary_statistics(results_df):
@@ -1132,7 +1948,7 @@ class MapGenerator:
     @staticmethod
     def create_phosphorus_map(lake_gdf, value_column, title, output_path,
                              cmap='RdYlGn_r', vmin=None, vmax=None,
-                             catchment_gdf=None, lake_gdf_poly=None):
+                             catchment_gdf=None, lake_gdf_poly=None, legend_label=None):
         """
         Create map of phosphorus loads across river network.
 
@@ -1146,6 +1962,7 @@ class MapGenerator:
             vmax: Maximum value for color scale
             catchment_gdf: Optional catchment boundary
             lake_gdf_poly: Optional lake polygon
+            legend_label: Optional legend label (auto-detected if None)
 
         Returns:
             Path to saved map
@@ -1191,6 +2008,15 @@ class MapGenerator:
 
             print(f"    Value range: {vmin:.4f} to {vmax:.4f}")
 
+            # Auto-detect legend label if not provided
+            if legend_label is None:
+                if 'coverage' in value_column.lower() or 'percent' in value_column.lower():
+                    legend_label = 'Coverage (%)'
+                elif 'reduction' in value_column.lower():
+                    legend_label = 'TP Reduction (t/y)'
+                else:
+                    legend_label = 'TP Load (t/y)'
+
             # Plot river reaches with color by value
             lake_gdf.plot(column=value_column,
                          ax=ax,
@@ -1200,7 +2026,7 @@ class MapGenerator:
                          vmax=vmax,
                          legend=True,
                          legend_kwds={
-                             'label': 'TP Load (t/y)',
+                             'label': legend_label,
                              'orientation': 'horizontal',
                              'shrink': 0.8,
                              'pad': 0.05
@@ -1471,7 +2297,7 @@ class MapGenerator:
                 result = MapGenerator.create_phosphorus_map(
                     lake_gdf, 'CW_Coverage_Percent',
                     'CW Site Coverage by Reach (%)',
-                    path, cmap='YlGnBu', vmin=0, vmax=10,
+                    path, cmap='YlGnBu', vmin=0,
                     catchment_gdf=catchment_gdf,
                     lake_gdf_poly=lake_poly_gdf)
                 if result:
@@ -1502,8 +2328,15 @@ class LakeOmapereAnalysis:
         self.attenuation = None
         self.results = None
 
+        # NEW: Additional data for P fractions and pathways
+        self.p_fractions = None
+        self.landuse_data = None
+        self.hype_pathways = None
+        self.pathway_lrfs = None
+
         print("\n" + "=" * 70)
         print("Lake Omapere CW Mitigation Effectiveness Analysis")
+        print("Baseline: With +0.66m lake rise effect")
         print("=" * 70)
 
     def load_all_data(self):
@@ -1514,11 +2347,11 @@ class LakeOmapereAnalysis:
         loader = DataLoader()
 
         try:
-            # Load CLUES spreadsheets
+            # Load CLUES baseline (already includes +0.66m lake rise effect)
+            print("\n  [NOTE] Baseline includes +0.66m lake rise effect")
             self.baseline_clues = loader.load_clues_excel(
-                Config.CLUES_BASELINE_PATH, "baseline")
-            self.wetland_clues = loader.load_clues_excel(
-                Config.CLUES_WETLAND_PATH, "wetland")
+                Config.CLUES_BASELINE_PATH, "baseline (with +0.66m lake rise)")
+            self.wetland_clues = None  # Not used - only baseline with lake rise
 
             # Load supporting data
             self.cw_coverage = loader.load_cw_coverage(Config.CW_COVERAGE_XLSX)
@@ -1526,7 +2359,44 @@ class LakeOmapereAnalysis:
             self.reach_network = loader.load_reach_network(Config.REACH_NETWORK_CSV)
             self.attenuation = loader.load_attenuation_factors(Config.ATTENUATION_CSV)
 
-            print("\nOK All data loaded successfully")
+            # NEW: Load P fractions, land use, and pathways data
+            self.p_fractions = loader.load_p_fractions(Config.CONTAMINANT_SPLITS_XLSX)
+            self.landuse_data = loader.load_landuse(Config.LANDUSE_CSV)
+            self.hype_pathways = loader.load_hype_pathways(Config.HYPE_CSV)
+            self.pathway_lrfs = loader.load_pathway_lrfs(Config.LRF_XLSX)
+
+            # FILTER ALL DATA TO LAKE OMAPERE REACHES ONLY
+            lake_reach_ids = self.cw_coverage['reach_id'].astype(int).tolist()
+            print(f"\n[FILTER] Filtering all datasets to {len(lake_reach_ids)} Lake Omapere reaches...")
+
+            # Filter network data
+            initial_network = len(self.reach_network)
+            self.reach_network = self.reach_network[self.reach_network['NZSEGMENT'].isin(lake_reach_ids)].copy()
+            print(f"  Network: {initial_network} -> {len(self.reach_network)} reaches")
+
+            # Filter attenuation data
+            initial_atten = len(self.attenuation)
+            self.attenuation = self.attenuation[self.attenuation['NZSEGMENT'].isin(lake_reach_ids)].copy()
+            print(f"  Attenuation: {initial_atten} -> {len(self.attenuation)} reaches")
+
+            # Filter clay data
+            initial_clay = len(self.clay_data)
+            self.clay_data = self.clay_data[self.clay_data['NZSEGMENT'].isin(lake_reach_ids)].copy()
+            print(f"  Clay data: {initial_clay} -> {len(self.clay_data)} reaches")
+
+            # Filter land use data
+            if self.landuse_data is not None:
+                initial_landuse = len(self.landuse_data)
+                self.landuse_data = self.landuse_data[self.landuse_data['NZSEGMENT'].isin(lake_reach_ids)].copy()
+                print(f"  Land use: {initial_landuse} -> {len(self.landuse_data)} reaches")
+
+            # Filter HYPE pathways data
+            if self.hype_pathways is not None:
+                initial_hype = len(self.hype_pathways)
+                self.hype_pathways = self.hype_pathways[self.hype_pathways['NZSEGMENT'].isin(lake_reach_ids)].copy()
+                print(f"  HYPE pathways: {initial_hype} -> {len(self.hype_pathways)} reaches")
+
+            print("\nOK All data loaded and filtered to Lake Omapere reaches")
 
         except Exception as e:
             print(f"\nERROR Error loading data: {e}")
@@ -1538,16 +2408,29 @@ class LakeOmapereAnalysis:
         print("-" * 70)
 
         try:
-            # Extract load components
+            # Extract load components (baseline includes +0.66m lake rise effect)
             calc = GeneratedLoadsCalculator()
             baseline_components = calc.extract_load_components(self.baseline_clues)
-            wetland_components = calc.extract_load_components(self.wetland_clues)
 
-            # Calculate generated loads
-            self.results = calc.calculate_generated_loads(
-                baseline_components, wetland_components)
+            # Calculate generated loads (single baseline scenario with +0.66m lake rise)
+            self.results = baseline_components[['reach_id', 'total_load']].copy()
+            self.results.rename(columns={'total_load': 'generated_baseline'}, inplace=True)
 
-            print("\nOK Generated loads calculated")
+            # Also create generated_wetland column for compatibility with rest of pipeline
+            self.results['generated_wetland'] = self.results['generated_baseline']
+
+            print(f"\n  Baseline (with +0.66m lake rise) mean load: {self.results['generated_baseline'].mean():.4f} t/y")
+
+            # FILTER TO LAKE OMAPERE REACHES ONLY
+            lake_reach_ids = self.cw_coverage['reach_id'].astype(int).tolist()
+            initial_count = len(self.results)
+            self.results = self.results[self.results['reach_id'].isin(lake_reach_ids)].copy()
+            final_count = len(self.results)
+
+            print(f"\n  [FILTER] Filtered from {initial_count} reaches to {final_count} Lake Omapere reaches")
+            print(f"  Lake Omapere total load: {self.results['generated_baseline'].sum():.4f} t/y")
+
+            print("\nOK Generated loads calculated (baseline with +0.66m lake rise)")
 
         except Exception as e:
             print(f"\nERROR Error calculating generated loads: {e}")
@@ -1568,6 +2451,60 @@ class LakeOmapereAnalysis:
         except Exception as e:
             print(f"\nERROR Error applying CW mitigation: {e}")
             raise
+
+    def calculate_p_fractions_and_pathways(self):
+        """Calculate P fractions and pathway distributions"""
+        print("\n[STEP 3B] CALCULATING P FRACTIONS AND PATHWAYS")
+        print("-" * 70)
+
+        try:
+            p_calc = PFractionPathwayCalculator()
+
+            # Split TP into P fractions (PartP, DRP, DOP)
+            if self.p_fractions is not None:
+                self.results = p_calc.split_tp_into_fractions(
+                    self.results, self.p_fractions)
+                print("  P fractions calculated (PartP, DRP, DOP)")
+            else:
+                print("  Warning: P fractions not available, skipping")
+
+            # PHASE 1: Calculate Bank Erosion (BE) split
+            # 50% of each P fraction goes to BE pathway, 50% distributed through HYPE pathways
+            self.results = p_calc.calculate_bank_erosion_split(
+                self.results, sediment_pct=0.5)
+            print("  Bank erosion split calculated (50% BE, 50% HYPE pathways)")
+
+            # Split P fractions by HYPE pathways
+            if self.hype_pathways is not None:
+                self.results = p_calc.split_by_hype_pathways(
+                    self.results, self.hype_pathways, self.p_fractions)
+                print("  Pathway distributions calculated (SR, IF, SG, DG, TD, SD)")
+            else:
+                print("  Warning: HYPE pathways not available, skipping")
+
+            # PHASE 2: Apply pathway-specific CW mitigation
+            if self.pathway_lrfs is not None and self.p_fractions is not None:
+                print("\n  Applying Phase 2 pathway-specific CW mitigation...")
+                self.results = CWMitigationCalculator.apply_pathway_specific_mitigation(
+                    self.results, self.pathway_lrfs, self.p_fractions)
+            else:
+                print("  Warning: Pathway LRFs or P fractions not available, skipping Phase 2")
+
+            # Merge land use data
+            if self.landuse_data is not None:
+                self.results = self.results.merge(
+                    self.landuse_data, on='reach_id', how='left')
+                print("  Land use data merged")
+            else:
+                print("  Warning: Land use data not available, skipping")
+
+            print("\nOK P fractions and pathways calculated")
+
+        except Exception as e:
+            print(f"\nERROR Error calculating P fractions/pathways: {e}")
+            print("  Continuing without P fraction detail...")
+            import traceback
+            traceback.print_exc()
 
     def route_loads(self):
         """Route loads through network"""
@@ -1609,6 +2546,9 @@ class LakeOmapereAnalysis:
             gen.save_results_csv(self.results,
                                 'Lake_Omapere_Analysis_Results.csv')
 
+            # Save formatted Excel file for Lake Omapere reaches
+            gen.save_lake_omapere_excel(self.results, self.cw_coverage)
+
             # Generate summary statistics
             summary = gen.generate_summary_statistics(self.results)
             gen.save_summary_json(summary)
@@ -1634,18 +2574,21 @@ class LakeOmapereAnalysis:
             self.load_all_data()
             self.calculate_generated_loads()
             self.apply_cw_mitigation()
+            self.calculate_p_fractions_and_pathways()  # NEW: Add P fractions and pathways
             self.route_loads()
             summary = self.generate_outputs()
 
             print("\n" + "=" * 70)
             print("ANALYSIS COMPLETE")
             print("=" * 70)
+            print(f"\nBaseline: With +0.66m lake rise effect")
+            print(f"CW Scenario: Baseline + CW mitigation")
             print(f"\nResults saved to: {Config.OUTPUT_DIR}")
-            print(f"Key findings:")
-            print(f"  Generated Reduction: {summary['generated_reduction']['total']:.4f} t/y ({summary['generated_reduction']['percent']:.2f}%)")
+            print(f"\nKey findings:")
+            print(f"  CW Reduction: {summary['generated_reduction']['total']:.4f} t/y ({summary['generated_reduction']['percent']:.2f}%)")
 
             if 'routed_reduction' in summary:
-                print(f"  Routed Reduction: {summary['routed_reduction']['total']:.4f} t/y ({summary['routed_reduction']['percent']:.2f}%)")
+                print(f"  CW Reduction (routed): {summary['routed_reduction']['total']:.4f} t/y ({summary['routed_reduction']['percent']:.2f}%)")
                 amplification = (summary['routed_reduction']['total'] /
                                summary['generated_reduction']['total'])
                 print(f"  Routing Amplification: {amplification:.1f}×")
