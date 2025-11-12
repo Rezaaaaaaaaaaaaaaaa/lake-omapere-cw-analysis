@@ -84,6 +84,18 @@ PROJECT_STATUS.md
 QUICK_REFERENCE.txt
 QUICK_START.txt
 
+# Log files
+Logs/
+*.log
+
+# Temporary workflow files
+WORKFLOW_DIAGRAM_matplotlib.*
+WORKFLOW_DIAGRAM.dot
+create_workflow_diagram*.py
+
+# Archive
+Documentation/Archive/
+
 # Keep important files
 !README.md
 !LAKE_OMAPERE_MODEL_READY.md
@@ -91,3 +103,5 @@ QUICK_START.txt
 !SCHEMATICS_README.md
 !.gitignore
 !.gitkeep
+!Documentation/*.md
+!WORKFLOW_DIAGRAM_FINAL.*
